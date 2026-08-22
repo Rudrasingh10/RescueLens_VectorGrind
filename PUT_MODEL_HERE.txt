@@ -1,0 +1,1 @@
+Optional: upload your trained YOLO weights to the backend host as best.pt. Do not commit private model weights to a public repository.
