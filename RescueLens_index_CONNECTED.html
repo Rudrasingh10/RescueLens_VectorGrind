@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RescueLens — Command Center</title>
+<style>
+:root{
+  --bg:#061019;--panel:#0d1924;--panel2:#101f2c;--line:#203344;
+  --text:#edf6fb;--muted:#8da0b2;--teal:#22c7bd;--blue:#3aa0ff;
+  --red:#ff4d5d;--amber:#ffb020;--green:#35d07f;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+button,input{font:inherit}
+.top{height:72px;padding:0 22px;display:flex;justify-content:space-between;align-items:center;background:#071018;border-bottom:1px solid #1c2d3a}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#26d0c4,#1c8fff);display:grid;place-items:center;font-weight:900}
+.brand h1{margin:0;font-size:18px;letter-spacing:2px}
+.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:1px}
+.topright{display:flex;align-items:center;gap:8px}
+.pill,.btn{border:1px solid #294254;background:#0d1b27;color:#dceaf2;border-radius:9px;padding:9px 12px;font-size:10px;font-weight:800}
+.pill{border-radius:999px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);margin-right:7px}
+.primary{background:var(--teal);border-color:var(--teal);color:#001412}
+.layout{max-width:1800px;margin:auto;padding:16px;display:grid;grid-template-columns:310px minmax(0,1fr) 360px;gap:16px}
+.left,.right{display:flex;flex-direction:column;gap:16px}
+.panel{background:linear-gradient(180deg,#0d1924,#0b1721);border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:0 14px 40px #0005}
+.head{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;font-size:10px;font-weight:900;letter-spacing:1.3px;color:#b8c7d4}
+.muted{color:var(--muted);font-size:9px}
+.upload{padding:14px}
+.drop{height:190px;border:1.5px dashed #3a5365;border-radius:12px;display:grid;place-items:center;text-align:center;background:#ffffff03;cursor:pointer;overflow:hidden}
+.drop input{display:none}.drop strong{font-size:13px}.drop span{display:block;color:var(--muted);font-size:10px;margin-top:5px}
+.plus{width:45px;height:45px;border-radius:50%;background:#102633;color:var(--teal);display:grid;place-items:center;font-size:24px;margin:auto}
+.preview{width:100%;height:100%;object-fit:cover}
+.file{margin-top:9px;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:9px;color:#b9c9d4}
+.row{display:flex;gap:8px;margin-top:10px}.row>*{flex:1}
+.steps{padding:12px 14px}.step{padding:8px 0;color:#6f8798;font-size:10px}.step b{display:inline-block;width:23px;color:#557083}.step.on{color:#eaf5f8}.step.on b{color:var(--teal)}
+.stats{padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.stat{padding:9px;background:#0b151e;border:1px solid var(--line);border-radius:8px}.stat b{display:block;font-size:17px}.stat span{font-size:8px;color:var(--muted);text-transform:uppercase}
+.map{height:calc(100vh - 104px);min-height:620px;position:relative;overflow:hidden;background:radial-gradient(circle at 25% 30%,#1b80a720,transparent 30%),radial-gradient(circle at 75% 70%,#22c7bd18,transparent 30%),linear-gradient(135deg,#07151f,#0d1e2b)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);background-size:38px 38px}
+.road{position:absolute;height:7px;background:#263947;border:1px solid #354c5b;border-radius:999px}.r1{width:78%;left:9%;top:20%;transform:rotate(16deg)}.r2{width:70%;left:14%;top:58%;transform:rotate(-18deg)}.r3{width:74%;left:12%;top:75%;transform:rotate(7deg)}
+.river{position:absolute;width:170%;height:150px;left:-25%;top:47%;transform:rotate(-13deg);background:#216da433;border-top:1px solid #50adea55}
+.zone{position:absolute;border:1px dashed #ffffff2e;border-radius:16px;padding:8px;color:#8fa6b6;font-size:8px;text-transform:uppercase}.za{left:7%;top:12%;width:28%;height:27%}.zb{right:8%;bottom:13%;width:30%;height:28%}
+.marker{position:absolute;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 4px 16px #0008;z-index:5;cursor:pointer}.critical{background:var(--red)}.high{background:var(--amber)}.normal{background:var(--green)}.marker.active{outline:5px solid #22c7bd44}
+.m1{left:22%;top:32%}.m2{left:50%;top:45%}.m3{left:72%;top:29%}.m4{left:66%;top:68%}.m5{left:35%;top:77%}
+.hud{position:absolute;z-index:8;top:14px;left:14px;display:flex;gap:8px}.hud span,.maptitle,.legend{background:#07111ad9;border:1px solid #2a4051;border-radius:8px;padding:8px 10px;font-size:9px;color:#afc0cc;backdrop-filter:blur(8px)}
+.map-title{position:absolute;right:14px;top:14px;z-index:8;text-align:right}.map-title h2{margin:0;font-size:14px}.map-title p{margin:3px 0 0;color:var(--muted);font-size:8px}
+.legend{position:absolute;z-index:8;bottom:15px;left:15px}.legend div{margin:5px 0}.lg{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.queue{padding:0 12px 12px}.qitem{width:100%;display:flex;align-items:center;gap:9px;margin-top:8px;padding:11px;border:1px solid var(--line);background:#0b151e;color:#e8f1f6;border-radius:10px;text-align:left}.qitem:hover,.qitem.active{border-color:#2b8c86;background:#0d1d25}
+.qdot{width:9px;height:9px;border-radius:50%;flex:none}.qdot.critical{background:var(--red)}.qdot.high{background:var(--amber)}.qdot.normal{background:var(--green)}
+.qmain{flex:1}.qmain b,.qmain span{display:block}.qmain b{font-size:11px}.qmain span{font-size:9px;color:var(--muted);margin-top:3px}.score{font-size:17px;font-weight:900}
+.detail{padding:14px}.dhead{display:flex;justify-content:space-between;align-items:flex-start}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:8px;font-weight:900;letter-spacing:1px}.badge.critical{background:#3a161b;color:#ff9ea8}.badge.high{background:#3a2b10;color:#ffd277}.badge.normal{background:#102d20;color:#87eeb0}.dhead h2{margin:7px 0 0;font-size:21px}.rscore{font-size:35px;font-weight:950}.rscore small{font-size:9px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.kv{padding:9px;background:#0b151e;border:1px solid var(--line);border-radius:8px}.kv span,.kv b{display:block}.kv span{font-size:8px;color:var(--muted);text-transform:uppercase}.kv b{font-size:11px;margin-top:3px}
+.route{margin-top:10px;padding:12px;background:linear-gradient(135deg,#0d2630,#0a1b24);border:1px solid #24485a;border-radius:9px}.route span{font-size:8px;color:#7fded7;letter-spacing:1px}.route strong{display:block;margin-top:3px}.route p{font-size:9px;color:var(--muted);line-height:1.45;margin:4px 0 0}
+.alerts{padding:0 14px 14px}.alert{margin-top:8px;padding:9px;border-left:3px solid var(--amber);background:#101b24;border-radius:0 9px 9px 0}.alert b{font-size:10px}.alert span{display:block;margin-top:3px;color:var(--muted);font-size:9px}
+.statusbox{margin:10px 14px 14px;padding:10px;border:1px solid var(--line);border-radius:9px;font-size:9px;color:#a9bbc7}
+.footer{max-width:1800px;margin:auto;padding:0 16px 15px;display:flex;justify-content:space-between;color:#6e8291;font-size:9px}
+.toast{position:fixed;right:18px;bottom:18px;background:#0b1821;border:1px solid #2d4658;color:#dcebf4;padding:11px 13px;border-radius:10px;font-size:10px;opacity:0;transform:translateY(10px);transition:.25s;z-index:40}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1200px){.layout{grid-template-columns:280px 1fr}.right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}.map{height:700px}}
+@media(max-width:820px){.layout{grid-template-columns:1fr;padding:10px}.right{display:flex}.map{height:580px;min-height:0}.top{padding:0 12px}.topright .pill{display:none}.footer{padding:0 10px 12px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">RL</div><div><h1>RESCUELENS</h1><small>DISASTER INTELLIGENCE COMMAND CENTER</small></div></div>
+  <div class="topright"><div class="pill" id="mode"><span class="dot"></span> CHECKING API</div><button class="btn" onclick="location.reload()">REFRESH</button></div>
+</header>
+
+<main class="layout">
+<aside class="left">
+  <section class="panel">
+    <div class="head"><span>01 / AERIAL INPUT</span><span class="muted" id="apiState">—</span></div>
+    <div class="upload">
+      <label class="drop" id="drop">
+        <input id="file" type="file" accept="image/*">
+        <div id="dropText"><div class="plus">＋</div><strong>Upload disaster imagery</strong><span>JPG / PNG / drone frame</span></div>
+        <img id="preview" class="preview" hidden alt="">
+      </label>
+      <div class="file" id="fileName" hidden></div>
+      <div class="row"><button class="btn" onclick="clearInput()">CLEAR</button><button class="btn primary" id="analyze" onclick="analyze()">RUN ANALYSIS</button></div>
+    </div>
+    <div class="steps">
+      <div class="step on"><b>01</b> Detect survivors & hazards</div>
+      <div class="step" id="step2"><b>02</b> Geotag detections</div>
+      <div class="step" id="step3"><b>03</b> Calculate risk</div>
+      <div class="step" id="step4"><b>04</b> Build priority queue</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="det">05</b><span>Detected</span></div>
+      <div class="stat"><b id="crit" style="color:var(--red)">02</b><span>Critical</span></div>
+      <div class="stat"><b id="high" style="color:var(--amber)">02</b><span>High</span></div>
+      <div class="stat"><b id="norm" style="color:var(--green)">01</b><span>Normal</span></div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="head"><span>IMPLEMENTATION NOTE</span><span class="muted">HONEST MVP</span></div>
+    <div class="statusbox" id="impl">The site runs in demo mode until your team's <b>best.pt</b> model is added to the backend.</div>
+  </section>
+</aside>
+
+<section class="panel map">
+  <div class="grid"></div><div class="river"></div><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+  <div class="zone za">HIGH-RISK ZONE</div><div class="zone zb">SAFE / ACCESSIBLE ZONE</div>
+  <div id="markers"></div>
+  <div class="hud"><span>UAV FEED: <b id="feed">SIMULATED</b></span><span>GPS LOCK: 7 SAT</span><span>LATENCY: 86 ms</span></div>
+  <div class="map-title"><h2>RESCUE MAP</h2><p>GEOTAGGED INCIDENTS • PRIORITY LAYER</p></div>
+  <div class="legend"><div><i class="lg" style="background:var(--red)"></i>Critical — immediate dispatch</div><div><i class="lg" style="background:var(--amber)"></i>High — verify & dispatch</div><div><i class="lg" style="background:var(--green)"></i>Normal — monitor</div></div>
+</section>
+
+<aside class="right">
+  <section class="panel"><div class="head"><span>02 / PRIORITY QUEUE</span><span class="muted">SORT: RISK</span></div><div id="queue" class="queue"></div></section>
+  <section class="panel"><div class="head"><span>03 / INCIDENT DETAIL</span><span class="muted" id="detailMode">DEMO</span></div><div id="detail" class="detail"></div></section>
+  <section class="panel"><div class="head"><span>04 / ALERTS</span><span class="muted">LIVE</span></div><div class="alerts">
+    <div class="alert"><b>Priority location requires verification</b><span>AI recommendation remains subject to commander review.</span></div>
+    <div class="alert"><b>Route constraint detected</b><span>Ground access may be delayed around the incident.</span></div>
+    <div class="alert" style="border-left-color:var(--green)"><b>Safe zone available</b><span>Evacuation point is currently accessible.</span></div>
+  </div></section>
+</aside>
+</main>
+
+<div class="footer"><span>RescueLens • SIH software MVP</span><span>DETECT → GEOTAG → RISK → PRIORITY → ACTION</span></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "https://rescuelens-api.onrender.com";
+let events=[], selected=null;
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function priorityClass(p){return (p||'normal').toLowerCase()}
+function renderQueue(){
+ const q=document.getElementById('queue');
+ if(!events.length){q.innerHTML='<div style="padding:18px;color:#7f93a3;font-size:10px">No incidents yet. Run analysis.</div>';return}
+ q.innerHTML=events.map(e=>`<button class="qitem ${selected?.id===e.id?'active':''}" onclick="selectEvent('${e.id}')"><span class="qdot ${priorityClass(e.priority)}"></span><span class="qmain"><b>#${e.rank} ${e.id}</b><span>${e.threat} • access ${e.accessibility}/100</span></span><span class="score">${e.risk_score}</span></button>`).join('')
+}
+function renderMarkers(){
+ const wrap=document.getElementById('markers');wrap.innerHTML='';
+ const coords=[[22,32],[50,45],[72,29],[66,68],[35,77],[60,60],[82,52]];
+ events.forEach((e,i)=>{
+   const pos=coords[i%coords.length];
+   const m=document.createElement('div');
+   m.className=`marker ${priorityClass(e.priority)} ${selected?.id===e.id?'active':''}`;
+   m.style.left=pos[0]+'%';m.style.top=pos[1]+'%';
+   m.title=`${e.id} • risk ${e.risk_score}`;
+   m.onclick=()=>selectEvent(e.id);
+   wrap.appendChild(m);
+ })
+}
+function renderDetail(){
+ const d=document.getElementById('detail');
+ if(!selected){d.innerHTML='<div style="color:#7f93a3;font-size:10px;padding:20px">Select an incident from the queue.</div>';return}
+ const c=priorityClass(selected.priority);
+ d.innerHTML=`<div class="dhead"><div><span class="badge ${c}">${selected.priority}</span><h2>${selected.id}</h2></div><div class="rscore">${selected.risk_score}<small>/100</small></div></div>
+ <div class="grid2">
+ <div class="kv"><span>Threat</span><b>${selected.threat}</b></div><div class="kv"><span>Confidence</span><b>${Math.round(selected.confidence*100)}%</b></div>
+ <div class="kv"><span>Severity</span><b>${selected.severity}/100</b></div><div class="kv"><span>Accessibility</span><b>${selected.accessibility}/100</b></div>
+ <div class="kv"><span>Latitude</span><b>${selected.latitude}</b></div><div class="kv"><span>Longitude</span><b>${selected.longitude}</b></div>
+ </div>
+ <div class="route"><span>RECOMMENDED ACCESS</span><strong>${selected.recommended_route}</strong><p>Commander review required before dispatch. AI ranks the incident; responders retain final authority.</p></div>
+ <div class="row"><button class="btn" onclick="override()">OVERRIDE</button><button class="btn primary" onclick="dispatch()">DISPATCH</button></div>`;
+}
+function selectEvent(id){selected=events.find(e=>e.id===id)||null;renderQueue();renderMarkers();renderDetail()}
+function override(){toast('Commander override recorded for '+selected.id)}
+function dispatch(){toast('Dispatch instruction created for '+selected.id)}
+function clearInput(){document.getElementById('file').value='';document.getElementById('preview').hidden=true;document.getElementById('dropText').hidden=false;document.getElementById('fileName').hidden=true;toast('Input cleared')}
+function setPreview(file){const img=document.getElementById('preview');if(file.type.startsWith('image/')){img.src=URL.createObjectURL(file);img.hidden=false;document.getElementById('dropText').hidden=true}document.getElementById('fileName').hidden=false;document.getElementById('fileName').textContent=file.name}
+document.getElementById('file').addEventListener('change',e=>e.target.files[0]&&setPreview(e.target.files[0]));
+async function health(){
+ try{const r=await fetch(API+'/api/health');const d=await r.json();document.getElementById('mode').innerHTML='<span class="dot"></span> '+(d.mode==='YOLO'?'YOLO LIVE':'DEMO MODE');document.getElementById('apiState').textContent=d.mode;document.getElementById('feed').textContent=d.mode==='YOLO'?'LIVE MODEL':'SIMULATED';document.getElementById('impl').innerHTML=d.model_loaded?'Live YOLO model loaded from <b>backend/models/best.pt</b>.':'No trained model loaded. Add <b>backend/models/best.pt</b> to switch to real inference.'}catch{document.getElementById('mode').innerHTML='<span style="color:#ffb020">● BACKEND OFFLINE</span>';document.getElementById('apiState').textContent='OFFLINE'}}
+async function analyze(){
+ const f=document.getElementById('file').files[0];if(!f){toast('Upload an aerial image first');return}
+ const btn=document.getElementById('analyze');btn.textContent='ANALYZING…';btn.disabled=true;
+ ['step2','step3','step4'].forEach((id,i)=>setTimeout(()=>document.getElementById(id).classList.add('on'),280*(i+1)));
+ try{
+  const fd=new FormData();fd.append('file',f);
+  const r=await fetch(API+'/api/analyze',{method:'POST',body:fd});if(!r.ok)throw new Error();
+  const data=await r.json();events=data.events||[];selected=events[0]||null;
+  document.getElementById('det').textContent=data.summary.detections;document.getElementById('crit').textContent=data.summary.critical;document.getElementById('high').textContent=data.summary.high;document.getElementById('norm').textContent=data.summary.normal;
+  document.getElementById('detailMode').textContent=data.mode;document.getElementById('feed').textContent=data.mode==='YOLO'?'LIVE MODEL':'SIMULATED';
+  renderQueue();renderMarkers();renderDetail();toast(data.mode==='YOLO'?'YOLO analysis complete':'Demo analysis complete');
+ }catch(e){toast('Backend unavailable — start FastAPI on port 8000')}finally{btn.textContent='RUN ANALYSIS';btn.disabled=false}
+}
+health();renderQueue();renderMarkers();renderDetail();
+</script>
+</body>
+</html>
