@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from PIL import Image
 from datetime import datetime, timezone
+from geotagger import extract_gps
 import io, hashlib, random
 
 app = FastAPI(title="RescueLens API", version="1.0")
@@ -83,13 +84,27 @@ async def analyze(file: UploadFile=File(...)):
         image=Image.open(io.BytesIO(raw)); size={"width":image.width,"height":image.height}
     except Exception:
         size={"width":None,"height":None}
+
+    real_gps = extract_gps(raw)          # NEW: try to read real EXIF GPS
+
     events=yolo_events(raw) if YOLO_MODE else None
     mode="YOLO" if events is not None else "DEMO_SIMULATION"
     if events is None: events=demo_events(raw)
+
+    if real_gps:                          # NEW: override with real location if found
+        lat, lng = real_gps
+        for e in events:
+            e["latitude"] = lat
+            e["longitude"] = lng
+            e["geotag_source"] = "IMAGE_EXIF_GPS"
+    else:                                 # NEW: label as estimated if not found
+        for e in events:
+            e["geotag_source"] = "ESTIMATED"
+
     return {"ok":True,"mode":mode,"filename":file.filename,"image_size":size,
-            "analyzed_at":datetime.now(timezone.utc).isoformat(),
-            "summary":{"detections":len(events),
-                       "critical":sum(e["priority"]=="CRITICAL" for e in events),
-                       "high":sum(e["priority"]=="HIGH" for e in events),
-                       "normal":sum(e["priority"]=="NORMAL" for e in events)},
-            "events":events}
+        "analyzed_at":datetime.now(timezone.utc).isoformat(),
+        "summary":{"detections":len(events),
+            "critical":sum(e["priority"]=="CRITICAL" for e in events),
+            "high":sum(e["priority"]=="HIGH" for e in events),
+            "normal":sum(e["priority"]=="NORMAL" for e in events)},
+        "events":events}
