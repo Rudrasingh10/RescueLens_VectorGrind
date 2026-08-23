@@ -26,10 +26,10 @@ def make_jpeg_with_gps(lat, lng) -> bytes:
 
     exif = Image.Exif()
     gps_ifd = {
-        1: "N" if lat >= 0 else "S",          # GPSLatitudeRef
-        2: _deg_to_dms_rational(abs(lat)),     # GPSLatitude
-        3: "E" if lng >= 0 else "W",          # GPSLongitudeRef
-        4: _deg_to_dms_rational(abs(lng)),     # GPSLongitude
+        1: "N" if lat >= 0 else "S",           
+        2: _deg_to_dms_rational(abs(lat)),     
+        3: "E" if lng >= 0 else "W",           
+        4: _deg_to_dms_rational(abs(lng)),     
     }
     exif[34853] = gps_ifd  # GPSInfo tag
 
@@ -59,29 +59,28 @@ def make_corrupt_bytes() -> bytes:
 def run():
     results = []
 
-    # 1. JPEG with real GPS EXIF -> should extract coords
     lat, lng = 21.251043, 81.628967
     raw = make_jpeg_with_gps(lat, lng)
     got = extract_gps(raw)
     ok = got is not None and abs(got[0] - lat) < 1e-4 and abs(got[1] - lng) < 1e-4
     results.append(("JPEG with GPS EXIF", ok, got))
 
-    # 2. JPEG with no EXIF at all -> should return None
+    
     raw = make_jpeg_without_gps()
     got = extract_gps(raw)
     results.append(("JPEG without EXIF", got is None, got))
 
-    # 3. PNG (Pillow won't expose _getexif() GPS the same way) -> should return None
+   
     raw = make_png_without_exif()
     got = extract_gps(raw)
     results.append(("PNG (no usable EXIF)", got is None, got))
 
-    # 4. Garbage bytes -> should not raise, should return None
+    
     raw = make_corrupt_bytes()
     got = extract_gps(raw)
     results.append(("Corrupt/non-image bytes", got is None, got))
 
-    # 5. Southern/Western hemisphere sign handling
+    
     lat, lng = -33.865143, -18.404100  # S / W
     raw = make_jpeg_with_gps(lat, lng)
     got = extract_gps(raw)
@@ -97,8 +96,7 @@ def run():
     print()
     print("ALL TESTS PASSED" if all_pass else "SOME TESTS FAILED")
 
-    # Save one geotagged and one non-geotagged JPEG to disk so you can also
-    # hit the live /api/analyze endpoint manually (see instructions below).
+    
     with open("/tmp/with_gps.jpg", "wb") as f:
         f.write(make_jpeg_with_gps(21.251043, 81.628967))
     with open("/tmp/without_gps.jpg", "wb") as f:
