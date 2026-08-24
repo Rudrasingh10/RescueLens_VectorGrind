@@ -1,3 +1,4 @@
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -7,12 +8,21 @@ from geotagger import extract_gps
 import io, hashlib, random
 
 app = FastAPI(title="RescueLens API", version="1.0")
+@app.get("/", include_in_schema=False)
+def home():
+    return FileResponse(Path(__file__).parent / "index.html")
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-MODEL_PATH = Path(__file__).parent / "models" / "best.pt"
+MODEL_PATH = Path(__file__).parent / "models" / "RescueLens_best.pt"
 MODEL = None
 YOLO_MODE = False
 

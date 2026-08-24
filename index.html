@@ -124,7 +124,7 @@ button,input{font:inherit}
 <div class="toast" id="toast"></div>
 
 <script>
-const API = "https://rescuelens-api.onrender.com";
+const API = "http://127.0.0.1:8000";
 let events=[], selected=null;
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
