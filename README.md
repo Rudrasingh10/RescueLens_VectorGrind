@@ -2,48 +2,43 @@
 
 ## What is included
 
-- `index.html` — complete RescueLens command-center frontend.
-- `backend/main.py` — FastAPI API.
-- Optional real Ultralytics YOLO inference when `backend/models/best.pt` is present.
-- Demo simulation fallback when no model is loaded.
+- `index.html` — RescueLens command-center frontend.
+- `main.py` — FastAPI API with live Ultralytics YOLO inference.
+- `models/RescueLens_best.pt` — trained RescueLens YOLO model.
+- `geotagger.py` — EXIF GPS extraction.
 - `render.yaml` — Render Web Service deployment config.
 
 ## Production/demo architecture
 
-Vercel:
-- Hosts the public frontend: `https://rescuelens.vercel.app`
+**Vercel**
+- Public frontend: `https://rescuelens.vercel.app`
 
-Render:
-- Hosts the FastAPI backend at a public `onrender.com` URL.
-- Free plan is suitable for testing/demo, with spin-down after inactivity.
+**Render**
+- Public FastAPI backend.
+- The frontend is configured to call `https://rescuelens-api.onrender.com` after the backend is deployed.
 
-## Backend deploy
+## Deploy the backend
 
-On Render:
-1. New → Web Service.
-2. Connect this GitHub repository.
-3. Root directory: `backend`.
-4. Build: `pip install -r requirements.txt`
-5. Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Plan: Free.
-7. Deploy.
+Render's FastAPI deployment uses a Python Web Service with:
+
+- Build: `pip install -r requirements.txt`
+- Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Health check: `/api/health`
+
+You can create the service from the `render.yaml` Blueprint or from **New → Web Service** in Render, connect this GitHub repository, and deploy from `main`.
+
+## One-click Render deployment
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Rudrasingh10/RescueLens_VectorGrind)
 
 ## Connect the frontend
 
-After Render gives the API URL, edit the `API` line in `index.html` to the public API URL, e.g.
+The frontend uses:
 
 `const API = "https://rescuelens-api.onrender.com";`
 
-Commit the change to GitHub. Vercel will redeploy automatically.
-
-## Real YOLO
-
-Put the trained model on the backend host as:
-
-`backend/models/best.pt`
-
-Do not put private/sensitive model weights in the public GitHub repository.
+After the Render service is live at that hostname, Vercel can serve the existing frontend directly.
 
 ## Important MVP boundary
 
-Without a trained disaster-specific model and real UAV GPS/telemetry/georeferencing, the backend's fallback mode is explicitly `DEMO_SIMULATION`. Do not present simulated coordinates/detections as real field measurements.
+The live YOLO path is used when the trained model loads successfully. If the model cannot be loaded, the backend falls back to an explicitly labelled demo simulation. Real GPS is only taken from image EXIF when available; otherwise coordinates are estimated.
