@@ -8,15 +8,14 @@ from geotagger import extract_gps
 import io, hashlib, random
 
 app = FastAPI(title="RescueLens API", version="1.0")
+
 @app.get("/", include_in_schema=False)
 def home():
     return FileResponse(Path(__file__).parent / "index.html")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-    ],
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -95,19 +94,19 @@ async def analyze(file: UploadFile=File(...)):
     except Exception:
         size={"width":None,"height":None}
 
-    real_gps = extract_gps(raw)          # NEW: try to read real EXIF GPS
+    real_gps = extract_gps(raw)
 
     events=yolo_events(raw) if YOLO_MODE else None
     mode="YOLO" if events is not None else "DEMO_SIMULATION"
     if events is None: events=demo_events(raw)
 
-    if real_gps:                          # NEW: override with real location if found
+    if real_gps:
         lat, lng = real_gps
         for e in events:
             e["latitude"] = lat
             e["longitude"] = lng
             e["geotag_source"] = "IMAGE_EXIF_GPS"
-    else:                                 # NEW: label as estimated if not found
+    else:
         for e in events:
             e["geotag_source"] = "ESTIMATED"
 
