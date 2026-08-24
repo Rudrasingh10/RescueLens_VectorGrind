@@ -1,5 +1,5 @@
 from fastapi.responses import FileResponse
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from PIL import Image
@@ -24,13 +24,17 @@ app.add_middleware(
 MODEL_PATH = Path(__file__).parent / "models" / "RescueLens_best.pt"
 MODEL = None
 YOLO_MODE = False
+MODEL_ERROR = None
 
 try:
     from ultralytics import YOLO
     if MODEL_PATH.exists():
         MODEL = YOLO(str(MODEL_PATH))
         YOLO_MODE = True
-except Exception:
+    else:
+        MODEL_ERROR = f"Model not found: {MODEL_PATH}"
+except Exception as exc:
+    MODEL_ERROR = f"YOLO load failed: {type(exc).__name__}: {exc}"
     MODEL = None
 
 THREATS = [("Rising water",24),("Structural debris",18),("Fire / smoke",22),("Blocked access",14)]
@@ -57,9 +61,21 @@ def demo_events(raw: bytes):
     return events
 
 def yolo_events(raw: bytes):
-    if not MODEL: return None
-    image=Image.open(io.BytesIO(raw)).convert("RGB")
-    result=MODEL.predict(source=image,verbose=False)[0]
+    if not MODEL:
+        return None
+    try:
+        image = Image.open(io.BytesIO(raw)).convert("RGB")
+        result = MODEL.predict(
+            source=image,
+            imgsz=512,
+            conf=0.35,
+            max_det=20,
+            device="cpu",
+            verbose=False,
+        )[0]
+    except Exception as exc:
+        raise RuntimeError(f"YOLO inference failed: {type(exc).__name__}: {exc}") from exc
+
     names=result.names; events=[]
     if result.boxes is None: return []
     for i,box in enumerate(result.boxes):
@@ -83,20 +99,30 @@ def yolo_events(raw: bytes):
 
 @app.get("/api/health")
 def health():
-    return {"ok":True,"mode":"YOLO" if YOLO_MODE else "DEMO_SIMULATION","model_loaded":YOLO_MODE,
-            "message":"Live YOLO model enabled." if YOLO_MODE else "Demo mode active."}
+    return {
+        "ok": True,
+        "mode": "YOLO" if YOLO_MODE else "DEMO_SIMULATION",
+        "model_loaded": YOLO_MODE,
+        "model_path": str(MODEL_PATH),
+        "model_error": MODEL_ERROR,
+        "message": "Live YOLO model enabled." if YOLO_MODE else "Demo mode active."
+    }
 
 @app.post("/api/analyze")
 async def analyze(file: UploadFile=File(...)):
     raw=await file.read()
     try:
         image=Image.open(io.BytesIO(raw)); size={"width":image.width,"height":image.height}
-    except Exception:
-        size={"width":None,"height":None}
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Unsupported/corrupt image: {type(exc).__name__}: {exc}")
 
     real_gps = extract_gps(raw)
 
-    events=yolo_events(raw) if YOLO_MODE else None
+    try:
+        events=yolo_events(raw) if YOLO_MODE else None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     mode="YOLO" if events is not None else "DEMO_SIMULATION"
     if events is None: events=demo_events(raw)
 
