@@ -118,10 +118,14 @@ async def analyze(file: UploadFile=File(...)):
 
     real_gps = extract_gps(raw)
 
+    inference_fallback = False
     try:
         events=yolo_events(raw) if YOLO_MODE else None
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except RuntimeError:
+        # Keep the live demo usable when a particular image causes a model/runtime issue.
+        # The fallback is deterministic for the uploaded image and is clearly labelled below.
+        events=None
+        inference_fallback=True
 
     mode="YOLO" if events is not None else "DEMO_SIMULATION"
     if events is None: events=demo_events(raw)
@@ -136,7 +140,8 @@ async def analyze(file: UploadFile=File(...)):
         for e in events:
             e["geotag_source"] = "ESTIMATED"
 
-    return {"ok":True,"mode":mode,"filename":file.filename,"image_size":size,
+    response_mode = "DEMO_SIMULATION_FALLBACK" if inference_fallback else mode
+    return {"ok":True,"mode":response_mode,"filename":file.filename,"image_size":size,
         "analyzed_at":datetime.now(timezone.utc).isoformat(),
         "summary":{"detections":len(events),
             "critical":sum(e["priority"]=="CRITICAL" for e in events),
